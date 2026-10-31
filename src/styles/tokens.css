@@ -1,0 +1,238 @@
+/* 设计层：白色主题。底白 / 卡面白 / 蓝强调 #AFC4D9（品牌色）。
+   层级由 1px 边线产生；圆角 6/10/14px。
+   禁用：渐变、发光、玻璃拟态、渐变文字、大面积软阴影。
+   #AFC4D9 作为浅蓝品牌色用于填充、边框与高亮背景；
+   在白底上作文字时改用派生深蓝 --accent-text 以保证对比度。 */
+
+:root {
+  --font-sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+
+  --fs-micro: 12px;
+  --fs-small: 13px;
+  --fs-body: 15px;
+  --fs-lead: 17px;
+  --fs-h3: 19px;
+  --fs-h2: 26px;
+  --fs-h1: clamp(34px, 5vw, 50px);
+  --fs-display: clamp(38px, 5.4vw, 58px);
+
+  --page-max: 1120px;
+  --gutter: 24px;
+  --dur: 150ms;
+  --dur-fast: 160ms;
+  --dur-reveal: 640ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-1: 0 2px 8px rgba(20, 30, 50, 0.06);
+  --shadow-2: 0 8px 28px rgba(20, 30, 50, 0.1);
+
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --radius-l: 14px;
+
+  --paper: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f3f5f8;
+  --ink: #1b2430;
+  --ink-2: #5c6675;
+  --ink-3: #8b95a4;
+  --line: #e6eaf0;
+  --line-strong: #cbd3dd;
+  --accent: #afc4d9;
+  --accent-strong: #93b2cc;
+  --accent-text: #3f637f;
+  --accent-ink: #14222e;
+  --glow: rgba(175, 196, 217, 0.22);
+  --shadow-card: 0 1px 2px rgba(20, 30, 50, 0.05);
+
+  color-scheme: light;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --gutter: 16px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /* 氛围层：22px 细线网格（工程图纸感），1px hairline，约 10% 深度 */
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, rgba(31, 53, 90, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 53, 90, 0.1) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 4px;
+}
+
+/* ---- 全局工具 ---- */
+
+.wrap {
+  width: 100%;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.micro {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+}
+
+/* WinUI Iconography（Segoe Fluent Icons / Segoe MDL2 Assets 字形） */
+.wicon {
+  font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets";
+  font-weight: 400;
+  line-height: 1;
+  font-style: normal;
+}
+
+/* ---- 入场编排（配合 v-reveal 指令：进入视口加 .in，只触发一次）---- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--dur-reveal) var(--ease-out),
+    transform var(--dur-reveal) var(--ease-out);
+}
+
+.reveal-d1.in {
+  transition-delay: 90ms;
+}
+
+.reveal-d2.in {
+  transition-delay: 180ms;
+}
+
+.reveal-d3.in {
+  transition-delay: 270ms;
+}
+
+.reveal-d4.in {
+  transition-delay: 360ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ---- 文档域主题（仅 /docs 路由挂载 html[data-docs-theme] 时生效）---- */
+
+/* 浅色：网格淡化——文档页以阅读为主，背景退到几乎不可见 */
+[data-docs-theme='light'] body {
+  background-image:
+    linear-gradient(to right, rgba(31, 53, 90, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 53, 90, 0.06) 1px, transparent 1px);
+}
+
+/* 深色：整套令牌覆盖（含页头页脚，文档域整体沉浸） */
+[data-docs-theme='dark'] {
+  --paper: #0e1116;
+  --surface: #151a21;
+  --surface-2: #1b222d;
+  --ink: #edf1f6;
+  --ink-2: #9aa4b2;
+  --ink-3: #6b7686;
+  --line: #232b35;
+  --line-strong: #35404e;
+  --accent-text: #9cc3e8;
+  --accent-strong: #4f9cf0;
+  --glow: rgba(79, 156, 240, 0.16);
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.36);
+  color-scheme: dark;
+}
+
+[data-docs-theme='dark'] body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, rgba(154, 180, 210, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(154, 180, 210, 0.05) 1px, transparent 1px);
+}

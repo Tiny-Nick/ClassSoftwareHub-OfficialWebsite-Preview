@@ -1,0 +1,36 @@
+{
+  "name": "classsoftwarehub-official-website",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "description": "ClassSoftwareHub 产品官网 —— 扁平极简 + 新拟物风格的门面站，分流至网页版清单、桌面版客户端与内置工具",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host=0.0.0.0",
+    "build-only": "vite build",
+    "build": "npm run build-only",
+    "build:single": "cross-env SINGLEFILE=1 vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --build",
+    "check": "npm run type-check && npm run build-only",
+    "sync:docs": "node scripts/sync-docs.cjs"
+  },
+  "dependencies": {
+    "vue": "^3.5.32",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "^24.0.4",
+    "@types/node": "^24.12.2",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "@vue/tsconfig": "^0.9.1",
+    "cross-env": "^7.0.3",
+    "typescript": "~6.0.0",
+    "vite": "^8.0.8",
+    "vite-plugin-singlefile": "^2.2.0",
+    "vue-tsc": "^3.2.6"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
