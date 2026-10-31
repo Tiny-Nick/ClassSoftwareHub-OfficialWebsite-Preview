@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { copy } from '../content/copy'
+import { publicUrl } from '../utils/assets'
 import { loadReleases, summaryOf, type ReleaseProduct } from '../utils/releases'
 
 /* WinUI Iconography（Segoe Fluent Icons / Segoe MDL2 Assets 字形码点） */
@@ -73,7 +74,12 @@ onMounted(async () => {
       </div>
     </div>
     <div class="hero-brand reveal-d3" v-reveal>
-      <img src="/brand/app-icon.png" alt="ClassSoftwareHub 应用图标" width="216" height="216" />
+      <img
+        :src="publicUrl('/brand/app-icon.png')"
+        alt="ClassSoftwareHub 应用图标"
+        width="216"
+        height="216"
+      />
     </div>
   </section>
 
@@ -82,7 +88,7 @@ onMounted(async () => {
     <div class="shot-frame">
       <img
         class="shot-img"
-        src="/shots/shot-software.png"
+        :src="publicUrl('/shots/shot-software.png')"
         :alt="copy.hero.shotCaption"
         width="1920"
         height="1020"
@@ -148,7 +154,7 @@ onMounted(async () => {
       >
         <figure class="deep-shot">
           <div class="shot-frame">
-            <img :src="item.image" :alt="item.alt" loading="lazy" />
+            <img :src="publicUrl(item.image)" :alt="item.alt" loading="lazy" />
           </div>
           <figcaption class="shot-cap micro">{{ item.alt }}</figcaption>
         </figure>
@@ -166,7 +172,7 @@ onMounted(async () => {
     <figure class="detail-shot">
       <div class="shot-frame">
         <img
-          src="/shots/shot-app-home.png"
+          :src="publicUrl('/shots/shot-app-home.png')"
           :alt="copy.detail.shotCaption"
           width="1920"
           height="1020"

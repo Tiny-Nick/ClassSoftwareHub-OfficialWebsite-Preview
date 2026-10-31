@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 
 import { copy } from '../content/copy'
 import { docsTheme, themeToggleLabel, toggleDocsTheme } from '../composables/useDocsTheme'
+import { publicUrl } from '../utils/assets'
 
 /* 滚动反馈：离开页面顶部时为页头加一层轻阴影，与内容区分层 */
 const scrolled = ref(false)
@@ -24,7 +25,13 @@ const isDocsReader = computed(() => route.path.startsWith('/docs') && !!route.pa
   <header class="site-head" :class="{ scrolled }">
     <div class="wrap head-row">
       <RouterLink :to="{ name: 'home' }" class="mark">
-        <img class="mark-ico" src="/brand/app-icon.png" alt="" width="26" height="26" />
+        <img
+          class="mark-ico"
+          :src="publicUrl('/brand/app-icon.png')"
+          alt=""
+          width="26"
+          height="26"
+        />
         <span class="mark-name">{{ copy.app.name }}</span>
         <span class="mark-sub">{{ copy.app.subtitle }}</span>
       </RouterLink>

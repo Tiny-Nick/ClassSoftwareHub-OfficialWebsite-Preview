@@ -2,6 +2,7 @@
 import { RouterLink } from 'vue-router'
 
 import { copy } from '../content/copy'
+import { publicUrl } from '../utils/assets'
 
 const WEB_URL = 'https://classsoftwarehub.us.ci'
 const DESKTOP_URL = 'https://github.com/c1201y/ClassSoftwareHub-Desktop/releases'
@@ -13,7 +14,13 @@ const REPO_URL = 'https://github.com/c1201y/ClassSoftwareHub'
     <div class="wrap">
       <div class="foot-grid">
         <div class="foot-brand">
-          <img class="foot-ico" src="/brand/app-icon.png" alt="" width="20" height="20" />
+          <img
+            class="foot-ico"
+            :src="publicUrl('/brand/app-icon.png')"
+            alt=""
+            width="20"
+            height="20"
+          />
           <p class="foot-name">{{ copy.app.name }}</p>
           <p class="foot-sub">{{ copy.app.subtitle }}</p>
         </div>

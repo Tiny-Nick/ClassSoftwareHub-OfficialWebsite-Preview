@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { copy } from '../content/copy'
+import { publicUrl } from '../utils/assets'
 </script>
 
 <template>
@@ -17,7 +18,7 @@ import { copy } from '../content/copy'
             <img
               v-if="repo.icon === 'desktop'"
               class="repo-mark repo-mark-img"
-              src="/brand/app-icon.png"
+              :src="publicUrl('/brand/app-icon.png')"
               alt=""
               width="40"
               height="40"

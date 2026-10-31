@@ -2,6 +2,7 @@
 import { RouterLink } from 'vue-router'
 
 import { copy } from '../content/copy'
+import { publicUrl } from '../utils/assets'
 
 /* 组卡点击进入该组第一篇 */
 function firstKey(items: { key: string }[]): string {
@@ -32,7 +33,12 @@ function firstKey(items: { key: string }[]): string {
         <p class="hero-meta">32 篇文档 · 内容同步自文档仓库 · GPL-3.0-only</p>
       </div>
       <div class="hero-brand">
-        <img src="/brand/app-icon.png" alt="ClassSoftwareHub 应用图标" width="216" height="216" />
+        <img
+          :src="publicUrl('/brand/app-icon.png')"
+          alt="ClassSoftwareHub 应用图标"
+          width="216"
+          height="216"
+        />
       </div>
     </div>
 
