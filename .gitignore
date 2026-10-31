@@ -33,6 +33,6 @@ logs
 npm-debug.log*
 __ps_*.txt
 
-# Verification scratch
-shots/
+# Verification scratch（只限仓库根目录，public/shots 是站点素材，必须入库）
+/shots/
 .verify/
