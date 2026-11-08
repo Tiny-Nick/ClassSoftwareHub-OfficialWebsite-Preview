@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#3f637f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img">
+  <!-- 官网部署源 / 页面布局：仓库列表统一图标，与平台标志同一视觉重量 -->
+  <rect x="6" y="5" width="36" height="38" rx="3"/>
+  <path d="M6 16h36"/>
+  <rect x="11" y="21" width="10" height="10" rx="1.5"/>
+  <path d="M26 23h11M26 29h11M11 37h26"/>
+</svg>

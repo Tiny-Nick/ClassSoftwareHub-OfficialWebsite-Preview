@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#3f637f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img">
+  <!-- 后端服务 / 服务器机架：仓库列表统一图标，与平台标志同一视觉重量 -->
+  <rect x="6" y="8" width="36" height="10" rx="2"/>
+  <rect x="6" y="20" width="36" height="10" rx="2"/>
+  <rect x="6" y="32" width="36" height="10" rx="2"/>
+  <circle cx="12" cy="13" r="1.5" fill="#3f637f" stroke="none"/>
+  <circle cx="12" cy="25" r="1.5" fill="#3f637f" stroke="none"/>
+  <circle cx="12" cy="37" r="1.5" fill="#3f637f" stroke="none"/>
+  <path d="M20 13h16M20 25h16M20 37h16"/>
+</svg>

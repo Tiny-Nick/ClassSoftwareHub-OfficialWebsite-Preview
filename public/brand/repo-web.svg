@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#3f637f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img">
+  <!-- 网页端 / 地球：仓库列表统一图标，与平台标志同一视觉重量 -->
+  <circle cx="24" cy="24" r="18"/>
+  <path d="M6 24h36M9.5 15h29M9.5 33h29"/>
+  <path d="M24 6c-5.5 5-8 11-8 18s2.5 13 8 18c5.5-5 8-11 8-18s-2.5-13-8-18z"/>
+</svg>

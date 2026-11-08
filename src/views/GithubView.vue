@@ -1,6 +1,24 @@
 <script setup lang="ts">
 import { copy } from '../content/copy'
 import { publicUrl } from '../utils/assets'
+
+/* 仓库图标统一资源：三个系统仓库复用下载页的平台标志，文档仓库使用提供的文档图标，
+   其余为同规格线框图标。全部置于同一尺寸的容器内，避免出现大小与风格不一的图标。 */
+const ICONS: Record<string, string> = {
+  web: '/brand/repo-web.svg',
+  desktop: '/brand/platform-windows.svg',
+  win7: '/brand/platform-win7.png',
+  android: '/brand/platform-android.png',
+  docs: '/brand/repo-docs.png',
+  api: '/brand/repo-api.svg',
+  site: '/brand/repo-site.svg',
+  github: '/brand/repo-github.svg',
+  download: '/brand/repo-download.svg',
+}
+
+function iconUrl(key: string): string {
+  return publicUrl(ICONS[key] ?? ICONS.github)
+}
 </script>
 
 <template>
@@ -10,60 +28,12 @@ import { publicUrl } from '../utils/assets'
       <p class="page-lede">{{ copy.github.lede }}</p>
     </header>
 
-    <!-- 列表形式：每行一个仓库，产品仓库沿用各自标志，其余用 GitHub 标志 -->
+    <!-- 列表形式：每行一个仓库，图标按仓库类型对应 -->
     <ul class="repo-list" :aria-label="copy.github.reposTitle" v-reveal>
       <li v-for="repo in copy.github.repos" :key="repo.url" class="repo-row">
         <a class="repo-link" :href="repo.url" rel="noopener">
           <span class="repo-mark" aria-hidden="true">
-            <img
-              v-if="repo.icon === 'desktop'"
-              class="repo-mark-img"
-              :src="publicUrl('/brand/app-icon.png')"
-              alt=""
-              width="36"
-              height="36"
-            />
-            <svg v-else-if="repo.icon === 'win7'" viewBox="0 0 48 48">
-              <path fill="#4CB5E8" d="M9 5h13a4 4 0 0 1 4 4v11H5V9a4 4 0 0 1 4-4z" />
-              <path fill="#1E6FBF" d="M26 5h13a4 4 0 0 1 4 4v11H26V5z" />
-              <path fill="#1E6FBF" d="M9 27h17v16H9a4 4 0 0 1-4-4V27z" />
-              <path fill="#4CB5E8" d="M26 27h17v16h-13a4 4 0 0 1-4-4V27z" />
-              <path
-                d="M3.5 24.5q5.5-4 11 0t11 0t11 0t11 0M24.5 3.5q-4 5.5 0 11t0 11t0 11t0 11"
-                stroke="#ffffff"
-                stroke-width="3.5"
-                fill="none"
-              />
-            </svg>
-            <svg v-else-if="repo.icon === 'android'" viewBox="0 0 24 24">
-              <rect
-                x="6"
-                y="2"
-                width="12"
-                height="20"
-                rx="2.5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-              <line
-                x1="10.5"
-                y1="4.8"
-                x2="13.5"
-                y2="4.8"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-              />
-              <circle cx="12" cy="18.5" r="1" fill="currentColor" />
-            </svg>
-            <span v-else-if="repo.icon === 'web'" class="wicon repo-mark-glyph">&#xE774;</span>
-            <svg v-else viewBox="0 0 16 16">
-              <path
-                fill="currentColor"
-                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"
-              />
-            </svg>
+            <img class="repo-mark-img" :src="iconUrl(repo.icon)" alt="" width="32" height="32" />
           </span>
 
           <span class="repo-text">
@@ -80,32 +50,7 @@ import { publicUrl } from '../utils/assets'
     <ul class="jump-row">
       <li v-for="jump in copy.github.jumps" :key="jump.label">
         <a class="jump-chip" :href="jump.url" rel="noopener">
-          <span v-if="jump.icon === 'download'" class="wicon jump-ico" aria-hidden="true">&#xE896;</span>
-          <svg
-            v-else-if="jump.icon === 'win7'"
-            class="jump-ico jump-ico-win7"
-            viewBox="0 0 48 48"
-            aria-hidden="true"
-          >
-            <!-- Win7 风格四格窗标：蓝色系四块 + 白色波浪分隔 -->
-            <path fill="#4CB5E8" d="M9 5h13a4 4 0 0 1 4 4v11H5V9a4 4 0 0 1 4-4z" />
-            <path fill="#1E6FBF" d="M26 5h13a4 4 0 0 1 4 4v11H26V5z" />
-            <path fill="#1E6FBF" d="M9 27h17v16H9a4 4 0 0 1-4-4V27z" />
-            <path fill="#4CB5E8" d="M26 27h17v16h-13a4 4 0 0 1-4-4V27z" />
-            <path
-              d="M3.5 24.5q5.5-4 11 0t11 0t11 0t11 0M24.5 3.5q-4 5.5 0 11t0 11t0 11t0 11"
-              stroke="#ffffff"
-              stroke-width="3.5"
-              fill="none"
-            />
-          </svg>
-          <span v-else-if="jump.icon === 'web'" class="wicon jump-ico" aria-hidden="true">&#xE774;</span>
-          <svg v-else-if="jump.icon === 'github'" class="jump-ico" viewBox="0 0 16 16" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"
-            />
-          </svg>
+          <img class="jump-ico" :src="iconUrl(jump.icon)" alt="" width="16" height="16" aria-hidden="true" />
           {{ jump.label }}<span class="arr" aria-hidden="true">↗</span>
         </a>
       </li>
@@ -170,31 +115,23 @@ import { publicUrl } from '../utils/assets'
   padding: 14px 20px;
 }
 
+/* 统一徽章容器：白底 1px 边线，所有图标按同一尺寸居中 */
 .repo-mark {
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid var(--line);
   border-radius: var(--radius-s);
-  background: var(--glow);
-  color: var(--accent-text);
-}
-
-.repo-mark > svg {
-  width: 20px;
-  height: 20px;
+  background: var(--surface);
 }
 
 .repo-mark-img {
-  border-radius: var(--radius-s);
-  border: 1px solid var(--line);
-  background: var(--surface-2);
-}
-
-.repo-mark-glyph {
-  font-size: 19px;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .repo-text {
@@ -275,11 +212,7 @@ import { publicUrl } from '../utils/assets'
   width: 16px;
   height: 16px;
   flex: 0 0 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: var(--ink-2);
+  object-fit: contain;
 }
 
 .jump-chip .arr {

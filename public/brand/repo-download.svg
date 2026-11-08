@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#3f637f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img">
+  <!-- 发布页 / 下载：仓库列表统一图标，与平台标志同一视觉重量 -->
+  <path d="M24 6v24M15 22l9 9 9-9"/>
+  <path d="M7 34v6a2 2 0 0 0 2 2h30a2 2 0 0 0 2-2v-6"/>
+</svg>
