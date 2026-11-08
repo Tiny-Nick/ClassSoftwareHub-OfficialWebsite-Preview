@@ -4,7 +4,6 @@ import { RouterLink } from 'vue-router'
 import { copy } from '../content/copy'
 import { publicUrl } from '../utils/assets'
 
-const WEB_URL = 'https://classsoftwarehub.us.ci'
 const DESKTOP_URL = 'https://github.com/c1201y/ClassSoftwareHub-Desktop/releases'
 const REPO_URL = 'https://github.com/c1201y/ClassSoftwareHub'
 </script>
@@ -35,7 +34,14 @@ const REPO_URL = 'https://github.com/c1201y/ClassSoftwareHub'
 
         <nav class="foot-col" aria-label="出口链接">
           <p class="micro col-head">出口</p>
-          <a class="flnk" :href="WEB_URL" rel="noopener">网页版 ↗</a>
+          <a
+            v-for="line in copy.web.lines"
+            :key="line.url"
+            class="flnk"
+            :href="line.url"
+            rel="noopener"
+            >网页版 · {{ line.label }} ↗</a
+          >
           <a class="flnk" :href="DESKTOP_URL" rel="noopener">桌面版安装包 ↗</a>
           <a class="flnk" :href="REPO_URL" rel="noopener">源码仓库 ↗</a>
         </nav>

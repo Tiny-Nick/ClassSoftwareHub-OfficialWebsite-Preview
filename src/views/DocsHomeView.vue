@@ -23,7 +23,7 @@ function firstKey(items: { key: string }[]): string {
           <RouterLink :to="{ name: 'docs', params: { doc: 'overview' } }" class="btn-solid">
             {{ copy.docs.hero.startAction }}<span class="arr" aria-hidden="true">→</span>
           </RouterLink>
-          <a class="btn-ghost" :href="copy.hero.webUrl" rel="noopener">
+          <a class="btn-ghost" :href="copy.web.lines[0].url" rel="noopener">
             {{ copy.docs.hero.webAction }}<span class="arr" aria-hidden="true">↗</span>
           </a>
           <a class="btn-ghost" :href="copy.hero.repoUrl" rel="noopener">

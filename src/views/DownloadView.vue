@@ -15,7 +15,8 @@ import {
 const DESKTOP_RELEASES = 'https://github.com/c1201y/ClassSoftwareHub-Desktop/releases'
 const WIN7_RELEASES = 'https://github.com/c1201y/ClassSoftwareHub-windows7/releases'
 const ANDROID_RELEASES = 'https://github.com/c1201y/ClassSoftwareHub-Android/releases'
-const WEB_URL = 'https://classsoftwarehub.us.ci'
+const XP_REPO_URL = 'https://github.com/HelloCHLdev/ClassSoftwareHubCrossPlatformEdition'
+const XP_RELEASES = 'https://github.com/Tiny-Nick/ClassSoftwareHub-OfficialWebsite-Preview/releases'
 const REPO_URL = 'https://github.com/c1201y/ClassSoftwareHub'
 
 const builds = ref<DesktopBuilds>({
@@ -24,6 +25,7 @@ const builds = ref<DesktopBuilds>({
   win7: null,
   win7Preview: null,
   android: null,
+  crossplatform: null,
 })
 const loading = ref(true)
 const busy = ref<Record<string, boolean>>({})
@@ -190,6 +192,9 @@ const platforms = computed<PlatformCard[]>(() => {
   ]
 })
 
+/* 跨平台实验包独立取用，不与平台卡共享版本块结构 */
+const xp = computed(() => builds.value.crossplatform)
+
 function metaText(item: VersionItem): string {
   if (item.build) return metaOf(item.build)
   return loading.value ? copy.download.loadingNote : item.emptyNote
@@ -298,13 +303,66 @@ onUnmounted(() => {
       </article>
     </div>
 
+    <!-- 跨平台实验版：前瞻实验性质，独立成区，不与三张正式平台卡并列 -->
+    <section class="xp" v-reveal aria-labelledby="xp-title">
+      <div class="xp-id">
+        <img class="xp-ico" :src="publicUrl('/brand/repo-linux.png')" alt="" width="48" height="48" />
+        <div class="xp-head">
+          <div class="xp-title">
+            <h2 id="xp-title" class="xp-name">{{ copy.download.xpTitle }}</h2>
+            <span class="xp-badge">{{ copy.download.xpBadge }}</span>
+          </div>
+          <p class="xp-desc">{{ copy.download.xpDesc }}</p>
+        </div>
+      </div>
+
+      <div class="xp-act">
+        <div class="xp-meta">
+          <b class="xp-pkg">{{ copy.download.xpPkgName }}</b>
+          <span class="xp-size">{{
+            xp ? metaOf(xp) : loading ? copy.download.loadingNote : copy.download.xpNote
+          }}</span>
+        </div>
+        <div class="xp-btns">
+          <button
+            v-if="xp"
+            type="button"
+            class="btn-solid"
+            :disabled="busy.crossplatform"
+            @click="downloadBuild('crossplatform', xp)"
+          >
+            {{ busy.crossplatform ? copy.download.downloadBusy : copy.download.xpAction
+            }}<span v-if="!busy.crossplatform" class="arr" aria-hidden="true">↓</span>
+          </button>
+          <a v-else class="btn-solid" :href="XP_RELEASES" rel="noopener">
+            {{ copy.download.xpAction }}<span class="arr" aria-hidden="true">↗</span>
+          </a>
+          <a class="vlink" :href="XP_REPO_URL" rel="noopener">
+            {{ copy.download.xpRepoLink }}<span aria-hidden="true">↗</span>
+          </a>
+          <a class="vlink" :href="xp?.releaseUrl ?? XP_RELEASES" rel="noopener">
+            {{ copy.download.releaseLink }}<span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <p v-if="hint.crossplatform" class="ver-hint" role="status">{{ hint.crossplatform }}</p>
+      </div>
+
+      <p class="xp-foot">{{ copy.download.xpFoot }}</p>
+    </section>
+
     <!-- 非安装包入口：收成一行，不再与平台卡并列 -->
     <div class="others" v-reveal>
       <h2 class="others-title">{{ copy.download.otherTitle }}</h2>
       <div class="others-links">
-        <a class="other" :href="WEB_URL" rel="noopener">
-          <span class="other-name">{{ copy.download.webTitle }}</span>
-          <span class="other-meta">{{ copy.download.webMeta }}</span>
+        <a
+          v-for="line in copy.web.lines"
+          :key="line.url"
+          class="other"
+          :href="line.url"
+          rel="noopener"
+        >
+          <span class="other-name">{{ copy.download.webTitle }} · {{ line.label }}</span>
+          <span class="other-meta">{{ line.host }}</span>
           <span class="other-arr" aria-hidden="true">↗</span>
         </a>
         <a class="other" :href="REPO_URL" rel="noopener">
@@ -538,6 +596,114 @@ onUnmounted(() => {
   border-top: 1px solid var(--line);
 }
 
+/* ---- 跨平台实验版：独立横条，与三张正式平台卡区分层级 ---- */
+
+.xp {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px 28px;
+  margin-top: 20px;
+  padding: 20px 22px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.xp-id {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.xp-ico {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  object-fit: contain;
+}
+
+.xp-head {
+  min-width: 0;
+}
+
+.xp-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.xp-name {
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.xp-badge {
+  font-size: 11px;
+  color: var(--accent-text);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 9px;
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.xp-desc {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+.xp-act {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.xp-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.xp-pkg {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.xp-size {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.xp-btns {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.xp-foot {
+  grid-column: 1 / -1;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
 /* ---- 底部次要入口 ---- */
 
 .others {
@@ -562,17 +728,20 @@ onUnmounted(() => {
 
 .others-links {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   flex: 1 1 auto;
 }
 
 .other {
+  position: relative;
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
   min-width: 0;
-  padding: 7px 10px;
+  padding: 9px 26px 9px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-s);
   transition:
@@ -600,13 +769,16 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+  max-width: 100%;
 }
 
 .other-arr {
-  margin-left: auto;
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--ink-3);
   font-size: 12px;
-  flex: 0 0 auto;
 }
 
 .page-note {
@@ -683,10 +855,28 @@ onUnmounted(() => {
     min-height: 0;
   }
 
+  .xp {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .xp-act {
+    align-items: flex-start;
+  }
+
+  .xp-meta,
+  .xp-btns {
+    justify-content: flex-start;
+  }
+
   .others {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
+  }
+
+  .others-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

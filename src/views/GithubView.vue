@@ -10,6 +10,7 @@ const ICONS: Record<string, string> = {
   win7: '/brand/platform-win7.png',
   android: '/brand/platform-android.png',
   docs: '/brand/repo-docs.png',
+  linux: '/brand/repo-linux.png',
   api: '/brand/repo-api.svg',
   site: '/brand/repo-site.svg',
   github: '/brand/repo-github.svg',

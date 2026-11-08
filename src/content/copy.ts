@@ -6,6 +6,14 @@ export const copy = {
     subtitle: '一款电教委的图吧工具箱',
     meta: 'GPL-3.0-only · 2026-10-25',
   },
+  /* 网页版线路：数组首项为线路一（主站），次项为线路二（备用）。
+     全站跳转统一引用此处，避免各处散落旧域名。 */
+  web: {
+    lines: [
+      { label: '线路一', url: 'https://classsoftwarehub.cn', host: 'classsoftwarehub.cn' },
+      { label: '线路二', url: 'https://classsoftwarehub.us.ci', host: 'classsoftwarehub.us.ci' },
+    ],
+  },
   nav: {
     home: '首页',
     download: '下载',
@@ -20,7 +28,7 @@ export const copy = {
     primaryAction: '下载桌面版',
     webAction: '使用网页版',
     githubAction: 'GitHub',
-    webUrl: 'https://classsoftwarehub.us.ci',
+    /* 首页主按钮走线路一，地址见 web.lines[0].url */
     repoUrl: 'https://github.com/c1201y/ClassSoftwareHub',
     shotCaption: '软件下载 · 课堂常用软件（实机截图）',
   },
@@ -202,22 +210,32 @@ export const copy = {
     webTitle: '网页版',
     webDesc: '无需安装，浏览器打开即可使用；适用于公用设备或临时环境。',
     webAction: '打开网页版',
-    webMeta: 'classsoftwarehub.us.ci',
     srcTitle: '源码',
     srcDesc: '站点与客户端均以 GPL-3.0-only 许可开源，可自行构建与审查。',
     srcAction: '前往 GitHub',
     changelogLink: '各版本改动见更新日志',
     changelogShort: '更新日志',
+    /* 跨平台实验版：前瞻实验性质，单独成区，不与三张正式平台卡并列 */
+    xpTitle: '跨平台实验版',
+    xpBadge: '前瞻实验预览',
+    xpDesc: '面向 Linux 等系统的前瞻实验版本，尚未形成正式版本；功能完整性与稳定性不作保证，供提前试用与反馈。',
+    xpPkgName: '预览包',
+    xpAction: '下载预览包',
+    xpNote: '暂未获取预览包信息，可从发布页下载',
+    xpRepoLink: '实验仓库',
+    xpFoot: '请解压至独立目录后运行其中的可执行文件',
   },
   github: {
     title: 'GitHub',
-    lede: '项目各端源码、文档与部署文件分列于以下仓库。',
+    lede: '项目各端源码、文档、部署文件及前瞻实验仓库分列如下。',
     jumpsTitle: '快速跳转',
     jumps: [
       { label: '桌面版 Releases', url: 'https://github.com/c1201y/ClassSoftwareHub-Desktop/releases', icon: 'download' },
       { label: 'Windows 7 兼容版', url: 'https://github.com/c1201y/ClassSoftwareHub-windows7/releases', icon: 'win7' },
       { label: '安卓版 Releases', url: 'https://github.com/c1201y/ClassSoftwareHub-Android/releases', icon: 'download' },
-      { label: '网页版', url: 'https://classsoftwarehub.us.ci', icon: 'web' },
+      { label: '跨平台实验版', url: 'https://github.com/HelloCHLdev/ClassSoftwareHubCrossPlatformEdition', icon: 'linux' },
+      { label: '网页版 · 线路一', url: 'https://classsoftwarehub.cn', icon: 'web' },
+      { label: '网页版 · 线路二', url: 'https://classsoftwarehub.us.ci', icon: 'web' },
       { label: '源码仓库', url: 'https://github.com/c1201y/ClassSoftwareHub', icon: 'github' },
     ],
     reposTitle: '全部仓库',
@@ -249,6 +267,13 @@ export const copy = {
         url: 'https://github.com/c1201y/ClassSoftwareHub-Android',
         owner: 'c1201y',
         icon: 'android',
+      },
+      {
+        name: 'ClassSoftwareHubCrossPlatformEdition',
+        desc: '跨平台客户端的前瞻实验仓库；探索 Linux 等系统上的客户端形态，尚未形成正式版本。',
+        url: 'https://github.com/HelloCHLdev/ClassSoftwareHubCrossPlatformEdition',
+        owner: 'HelloCHLdev',
+        icon: 'linux',
       },
       {
         name: 'classsoftwarehub-docs',

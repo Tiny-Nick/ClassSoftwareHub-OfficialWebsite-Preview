@@ -65,7 +65,7 @@ onMounted(async () => {
         <RouterLink :to="{ name: 'download' }" class="btn-solid">
           {{ copy.hero.primaryAction }}<span class="arr" aria-hidden="true">→</span>
         </RouterLink>
-        <a class="btn-ghost" :href="copy.hero.webUrl" rel="noopener">
+        <a class="btn-ghost" :href="copy.web.lines[0].url" rel="noopener">
           {{ copy.hero.webAction }}<span class="arr" aria-hidden="true">↗</span>
         </a>
         <a class="btn-ghost" :href="copy.hero.repoUrl" rel="noopener">
@@ -223,7 +223,7 @@ onMounted(async () => {
       <RouterLink :to="{ name: 'download' }" class="btn-solid">
         {{ copy.cta.download }}<span class="arr" aria-hidden="true">→</span>
       </RouterLink>
-      <a class="btn-ghost" :href="copy.hero.webUrl" rel="noopener">
+      <a class="btn-ghost" :href="copy.web.lines[0].url" rel="noopener">
         {{ copy.cta.web }}<span class="arr" aria-hidden="true">↗</span>
       </a>
       <a class="btn-ghost" :href="copy.hero.repoUrl" rel="noopener">

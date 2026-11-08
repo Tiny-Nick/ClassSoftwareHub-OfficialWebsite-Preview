@@ -5,9 +5,12 @@
 const DESKTOP_REPO = 'c1201y/ClassSoftwareHub-Desktop'
 const WIN7_REPO = 'c1201y/ClassSoftwareHub-windows7'
 const ANDROID_REPO = 'c1201y/ClassSoftwareHub-Android'
+/* 跨平台实验预览包发布在本站部署仓库的 Releases，作为附件分发，不进 git 历史。
+   该仓库同时也是 Pages 部署源，故不把大文件放进 public/ 目录。 */
+const CROSSPLATFORM_REPO = 'Tiny-Nick/ClassSoftwareHub-OfficialWebsite-Preview'
 
-export type DesktopChannel = 'stable' | 'preview' | 'win7' | 'win7Preview' | 'android'
-export type PackageKind = 'exe' | 'apk'
+export type DesktopChannel = 'stable' | 'preview' | 'win7' | 'win7Preview' | 'android' | 'crossplatform'
+export type PackageKind = 'exe' | 'apk' | 'zip'
 
 export interface PortableBuild {
   name: string
@@ -31,6 +34,7 @@ export interface DesktopBuilds {
   win7: DesktopBuild | null
   win7Preview: DesktopBuild | null
   android: DesktopBuild | null
+  crossplatform: DesktopBuild | null
 }
 
 interface RawAsset {
@@ -48,9 +52,9 @@ interface RawRelease {
   assets?: RawAsset[]
 }
 
-/* GitHub 接口未登录限流 60 次/小时/IP，三个仓库一次刷新消耗 3 次；
+/* GitHub 接口未登录限流 60 次/小时/IP，四个仓库一次刷新消耗 4 次；
    版本发布频率低，缓存 30 分钟，刷新页面不必重新请求。 */
-const CACHE_KEY = 'csh-site-desktop-builds-v2'
+const CACHE_KEY = 'csh-site-desktop-builds-v3'
 const CACHE_TTL = 30 * 60 * 1000
 const API_TIMEOUT = 10_000
 
@@ -90,7 +94,9 @@ function buildOf(release: RawRelease, kind: PackageKind): DesktopBuild | null {
   const installer =
     kind === 'apk'
       ? pickAsset(release, /\.apk$/i)
-      : (pickAsset(release, /Setup.*\.exe$/i) ?? pickAsset(release, /\.exe$/i))
+      : kind === 'zip'
+        ? pickAsset(release, /\.zip$/i)
+        : (pickAsset(release, /Setup.*\.exe$/i) ?? pickAsset(release, /\.exe$/i))
   if (!installer?.browser_download_url || !release.tag_name) return null
   const portable = kind === 'exe' ? pickAsset(release, /Portable.*\.zip$/i) : undefined
   return {
@@ -117,6 +123,17 @@ function pickBuild(releases: RawRelease[], channel: DesktopChannel): DesktopBuil
   return null
 }
 
+/* 实验包按 tag 前缀定位，不按 prerelease 泛取，
+   避免部署仓库日后出现其他预发布时误取到无关附件。 */
+function pickCrossplatform(releases: RawRelease[]): DesktopBuild | null {
+  for (const release of releases) {
+    if (release.draft || !/^crossplatform/i.test(release.tag_name)) continue
+    const build = buildOf(release, 'zip')
+    if (build) return build
+  }
+  return null
+}
+
 function readCache(): DesktopBuilds | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY)
@@ -126,7 +143,12 @@ function readCache(): DesktopBuilds | null {
     const builds = parsed.builds
     if (
       !builds ||
-      (!builds.stable && !builds.preview && !builds.win7 && !builds.win7Preview && !builds.android)
+      (!builds.stable &&
+        !builds.preview &&
+        !builds.win7 &&
+        !builds.win7Preview &&
+        !builds.android &&
+        !builds.crossplatform)
     )
       return null
     return {
@@ -135,6 +157,7 @@ function readCache(): DesktopBuilds | null {
       win7: builds.win7 ?? null,
       win7Preview: builds.win7Preview ?? null,
       android: builds.android ?? null,
+      crossplatform: builds.crossplatform ?? null,
     }
   } catch {
     return null
@@ -152,11 +175,12 @@ function writeCache(builds: DesktopBuilds): void {
 export async function resolveDesktopBuilds(): Promise<DesktopBuilds> {
   const cached = readCache()
   if (cached) return cached
-  /* 三个仓库并行取；任一失败不影响其余 */
-  const [desktop, win7, android] = await Promise.all([
+  /* 四个仓库并行取；任一失败不影响其余 */
+  const [desktop, win7, android, crossplatform] = await Promise.all([
     fetchReleases(DESKTOP_REPO),
     fetchReleases(WIN7_REPO),
     fetchReleases(ANDROID_REPO),
+    fetchReleases(CROSSPLATFORM_REPO),
   ])
   const builds: DesktopBuilds = {
     stable: desktop ? pickBuild(desktop, 'stable') : null,
@@ -164,8 +188,9 @@ export async function resolveDesktopBuilds(): Promise<DesktopBuilds> {
     win7: win7 ? pickBuild(win7, 'win7') : null,
     win7Preview: win7 ? pickBuild(win7, 'win7Preview') : null,
     android: android ? pickBuild(android, 'android') : null,
+    crossplatform: crossplatform ? pickCrossplatform(crossplatform) : null,
   }
-  if (desktop || win7 || android) writeCache(builds)
+  if (desktop || win7 || android || crossplatform) writeCache(builds)
   return builds
 }
 
