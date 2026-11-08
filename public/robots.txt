@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tiny-nick.github.io/ClassSoftwareHub-OfficialWebsite-Preview/sitemap.xml

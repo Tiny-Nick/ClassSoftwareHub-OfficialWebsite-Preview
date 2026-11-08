@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- 本站为单页应用，内页使用 hash 路由。hash 之后的部分不会发送至服务器，
+       搜索引擎仅能抓取站点入口这一个独立地址，故不列出内页以免产生重复项。
+       loc 与 robots.txt 中的 Sitemap 地址需与 Bing 已验证的站点域名一致；
+       正式主站域名确定后，两处需同步替换。 -->
+  <url>
+    <loc>https://tiny-nick.github.io/ClassSoftwareHub-OfficialWebsite-Preview/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
