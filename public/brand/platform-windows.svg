@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img">
-  <!-- 与原稿同一路径，整体居中缩放至画布 78%，与 Win7 / Android 图标视觉尺寸一致 -->
+  <!-- 通用四格 Windows 窗标，不绑定具体版本（该卡覆盖 Windows 10 1809 及以上，含 Windows 11）。
+       与原稿同一路径，整体居中缩放至画布 78%，与 Win7 / Android 图标视觉尺寸一致 -->
   <g transform="translate(17.6 17.6) scale(2.151724)" fill="#0078d4">
     <path d="M0 14v14h28V0H0zm30 0v14h28V0H30zM0 44v14h28V30H0zm30 0v14h28V30H30z" />
   </g>

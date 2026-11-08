@@ -161,10 +161,12 @@ export const copy = {
     title: '下载',
     lede: '按设备平台选择安装包。版本信息由 GitHub Releases 实时获取，安装包经加速节点分发。',
     platformLabel: '平台',
-    win11Title: 'Windows 11',
-    win11Requirement: 'Windows 10 1809 及以上',
-    win11Desc: '原生界面，下载任务不随窗口关闭中断；自包含发布，无需另行安装运行库，安装过程不需要管理员权限。',
-    win11Foot: '推荐大多数教室电脑使用',
+    /* 桌面端底线为 Windows 10 1809，Windows 11 同样适用；
+       标题勿写成 Windows 11，否则 Win10 用户会误判为不支持。 */
+    win10Title: 'Windows 10 及以上',
+    win10Requirement: '最低版本 Windows 10 1809',
+    win10Desc: '原生界面，下载任务不随窗口关闭中断；自包含发布，无需另行安装运行库，安装过程不需要管理员权限。',
+    win10Foot: '推荐大多数教室电脑使用',
     win7Title: 'Windows 7',
     win7Requirement: 'Windows 7 SP1 及以上',
     win7Desc: '面向旧版系统的独立发布线，提供安装版与便携版，两者功能一致。',

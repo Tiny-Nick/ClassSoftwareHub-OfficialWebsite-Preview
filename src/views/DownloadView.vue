@@ -102,12 +102,12 @@ const platforms = computed<PlatformCard[]>(() => {
   const b = builds.value
   return [
     {
-      id: 'win11',
-      icon: '/brand/platform-win11.svg',
-      title: d.win11Title,
-      requirement: d.win11Requirement,
-      desc: d.win11Desc,
-      foot: d.win11Foot,
+      id: 'win10',
+      icon: '/brand/platform-windows.svg',
+      title: d.win10Title,
+      requirement: d.win10Requirement,
+      desc: d.win10Desc,
+      foot: d.win10Foot,
       items: [
         {
           key: 'stable',
