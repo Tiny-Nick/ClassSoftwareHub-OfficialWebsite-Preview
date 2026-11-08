@@ -8,14 +8,22 @@ import {
   resolveDesktopBuilds,
   type DesktopBuild,
   type DesktopBuilds,
+  type DesktopChannel,
 } from '../utils/desktopDownloads'
 
 const DESKTOP_RELEASES = 'https://github.com/c1201y/ClassSoftwareHub-Desktop/releases'
 const WIN7_RELEASES = 'https://github.com/c1201y/ClassSoftwareHub-windows7/releases'
+const ANDROID_RELEASES = 'https://github.com/c1201y/ClassSoftwareHub-Android/releases'
 const WEB_URL = 'https://classsoftwarehub.us.ci'
 const REPO_URL = 'https://github.com/c1201y/ClassSoftwareHub'
 
-const builds = ref<DesktopBuilds>({ stable: null, preview: null, win7: null })
+const builds = ref<DesktopBuilds>({
+  stable: null,
+  preview: null,
+  win7: null,
+  win7Preview: null,
+  android: null,
+})
 const loading = ref(true)
 const busy = ref<Record<string, boolean>>({})
 const hint = ref<Record<string, string>>({})
@@ -25,6 +33,9 @@ const stable = computed(() => builds.value.stable)
 const preview = computed(() => builds.value.preview)
 const win7 = computed(() => builds.value.win7)
 const win7Portable = computed(() => builds.value.win7?.portable ?? null)
+const win7Preview = computed(() => builds.value.win7Preview)
+const win7PreviewPortable = computed(() => builds.value.win7Preview?.portable ?? null)
+const android = computed(() => builds.value.android)
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -57,15 +68,14 @@ async function startDownload(key: string, target: { url: string }): Promise<void
   }
 }
 
-function downloadBuild(key: 'stable' | 'preview' | 'win7', build: DesktopBuild | null): void {
+function downloadBuild(key: DesktopChannel, build: DesktopBuild | null): void {
   if (!build) return
   void startDownload(key, build)
 }
 
-function downloadPortable(): void {
-  const build = win7.value
+function downloadPortable(key: string, build: DesktopBuild | null): void {
   if (!build?.portable) return
-  void startDownload('win7Portable', build.portable)
+  void startDownload(key, build.portable)
 }
 
 onMounted(async () => {
@@ -170,7 +180,7 @@ const glyphs = {
                   type="button"
                   class="dl-sublink"
                   :disabled="busy.win7Portable"
-                  @click="downloadPortable"
+                  @click="downloadPortable('win7Portable', win7)"
                 >
                   {{ busy.win7Portable ? copy.download.downloadBusy : copy.download.portableAction
                   }}<span class="dl-sublink-size">{{ fmtSize(win7Portable.size) }}</span>
@@ -182,6 +192,63 @@ const glyphs = {
             </div>
             <p v-if="hint.win7 || hint.win7Portable" class="dl-hint" role="status">
               {{ hint.win7 || hint.win7Portable }}
+            </p>
+          </div>
+
+          <div class="dl-item">
+            <div class="dl-row">
+              <div class="dl-row-info">
+                <b class="dl-row-name">
+                  {{ copy.download.win7PreviewName
+                  }}<template v-if="win7Preview"> {{ win7Preview.tag }}</template>
+                </b>
+                <span class="dl-row-note">
+                  {{
+                    win7Preview
+                      ? metaOf(win7Preview) + ' · ' + copy.download.previewNote
+                      : loading
+                        ? copy.download.loadingNote
+                        : copy.download.previewNote
+                  }}
+                </span>
+              </div>
+              <div class="dl-row-act">
+                <button
+                  v-if="win7Preview"
+                  type="button"
+                  class="btn-ghost"
+                  :disabled="busy.win7Preview"
+                  @click="downloadBuild('win7Preview', win7Preview)"
+                >
+                  {{ busy.win7Preview ? copy.download.downloadBusy : copy.download.win7PreviewAction
+                  }}<span v-if="!busy.win7Preview" class="arr" aria-hidden="true">↓</span>
+                </button>
+                <a v-else class="btn-ghost" :href="WIN7_RELEASES" rel="noopener">
+                  {{ copy.download.win7PreviewAction }}<span class="arr" aria-hidden="true">↗</span>
+                </a>
+                <button
+                  v-if="win7PreviewPortable"
+                  type="button"
+                  class="dl-sublink"
+                  :disabled="busy.win7PreviewPortable"
+                  @click="downloadPortable('win7PreviewPortable', win7Preview)"
+                >
+                  {{ busy.win7PreviewPortable
+                    ? copy.download.downloadBusy
+                    : copy.download.portableAction
+                  }}<span class="dl-sublink-size">{{ fmtSize(win7PreviewPortable.size) }}</span>
+                </button>
+                <a
+                  class="dl-sublink"
+                  :href="win7Preview?.releaseUrl ?? WIN7_RELEASES"
+                  rel="noopener"
+                >
+                  {{ copy.download.releaseLink }}<span aria-hidden="true">↗</span>
+                </a>
+              </div>
+            </div>
+            <p v-if="hint.win7Preview || hint.win7PreviewPortable" class="dl-hint" role="status">
+              {{ hint.win7Preview || hint.win7PreviewPortable }}
             </p>
           </div>
 
@@ -238,6 +305,81 @@ const glyphs = {
         <a class="btn-ghost" :href="WEB_URL" rel="noopener">
           {{ copy.download.webAction }}<span class="arr" aria-hidden="true">↗</span>
         </a>
+      </article>
+
+      <!-- 安卓版 -->
+      <article class="dl-card">
+        <div class="dl-head">
+          <span class="dl-ico dl-ico-svg" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect
+                x="6"
+                y="2"
+                width="12"
+                height="20"
+                rx="2.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <line
+                x1="10.5"
+                y1="4.8"
+                x2="13.5"
+                y2="4.8"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              />
+              <circle cx="12" cy="18.5" r="1" fill="currentColor" />
+            </svg>
+          </span>
+          <h2 class="dl-name">{{ copy.download.androidTitle }}</h2>
+        </div>
+        <p class="dl-desc">{{ copy.download.androidDesc }}</p>
+
+        <div class="dl-item android-item">
+          <div class="dl-row">
+            <div class="dl-row-info">
+              <b class="dl-row-name">
+                {{ copy.download.androidPkgName
+                }}<template v-if="android"> {{ android.tag }}</template>
+              </b>
+              <span class="dl-row-note">
+                {{
+                  android
+                    ? metaOf(android)
+                    : loading
+                      ? copy.download.loadingNote
+                      : copy.download.androidNote
+                }}
+              </span>
+            </div>
+            <div class="dl-row-act">
+              <button
+                v-if="android"
+                type="button"
+                class="btn-solid"
+                :disabled="busy.android"
+                @click="downloadBuild('android', android)"
+              >
+                {{ busy.android ? copy.download.downloadBusy : copy.download.androidAction
+                }}<span v-if="!busy.android" class="arr" aria-hidden="true">↓</span>
+              </button>
+              <a v-else class="btn-solid" :href="ANDROID_RELEASES" rel="noopener">
+                {{ copy.download.androidAction }}<span class="arr" aria-hidden="true">↗</span>
+              </a>
+            </div>
+          </div>
+          <p v-if="hint.android" class="dl-hint" role="status">{{ hint.android }}</p>
+        </div>
+
+        <div class="android-foot">
+          <a class="dl-sublink" :href="android?.releaseUrl ?? ANDROID_RELEASES" rel="noopener">
+            {{ copy.download.releaseLink }}<span aria-hidden="true">↗</span>
+          </a>
+          <p class="dl-note">{{ copy.download.androidInstallNote }}</p>
+        </div>
       </article>
 
       <!-- 源码 -->
@@ -300,7 +442,7 @@ const glyphs = {
 }
 
 .dl-card.wide {
-  grid-row: span 2;
+  grid-row: span 3;
 }
 
 .dl-head {
@@ -319,6 +461,11 @@ const glyphs = {
   background: var(--glow);
   color: var(--accent-text);
   font-size: 18px;
+}
+
+.dl-ico-svg svg {
+  width: 20px;
+  height: 20px;
 }
 
 .dl-name {
@@ -435,6 +582,28 @@ const glyphs = {
   font-size: 12px;
   color: var(--ink-3);
   margin-top: 4px;
+}
+
+/* ---- 安卓版卡：窄栏内保持一行，补充说明另起一行 ---- */
+
+.android-item {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.android-item .dl-row {
+  padding: 12px 14px;
+}
+
+.android-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.android-foot .dl-note {
+  margin-top: 0;
 }
 
 /* ---- 按钮（与首页同款） ---- */

@@ -36,3 +36,6 @@ __ps_*.txt
 # Verification scratch（只限仓库根目录，public/shots 是站点素材，必须入库）
 /shots/
 .verify/
+
+# 本地工作记录：仅保存在本机，不随官网部署仓库发布
+.workbuddy/

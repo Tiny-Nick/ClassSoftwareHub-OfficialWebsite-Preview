@@ -4,8 +4,10 @@
 
 const DESKTOP_REPO = 'c1201y/ClassSoftwareHub-Desktop'
 const WIN7_REPO = 'c1201y/ClassSoftwareHub-windows7'
+const ANDROID_REPO = 'c1201y/ClassSoftwareHub-Android'
 
-export type DesktopChannel = 'stable' | 'preview' | 'win7'
+export type DesktopChannel = 'stable' | 'preview' | 'win7' | 'win7Preview' | 'android'
+export type PackageKind = 'exe' | 'apk'
 
 export interface PortableBuild {
   name: string
@@ -27,6 +29,8 @@ export interface DesktopBuilds {
   stable: DesktopBuild | null
   preview: DesktopBuild | null
   win7: DesktopBuild | null
+  win7Preview: DesktopBuild | null
+  android: DesktopBuild | null
 }
 
 interface RawAsset {
@@ -44,9 +48,9 @@ interface RawRelease {
   assets?: RawAsset[]
 }
 
-/* GitHub 接口未登录限流 60 次/小时/IP，两个仓库一次刷新消耗 2 次；
+/* GitHub 接口未登录限流 60 次/小时/IP，三个仓库一次刷新消耗 3 次；
    版本发布频率低，缓存 30 分钟，刷新页面不必重新请求。 */
-const CACHE_KEY = 'csh-site-desktop-builds'
+const CACHE_KEY = 'csh-site-desktop-builds-v2'
 const CACHE_TTL = 30 * 60 * 1000
 const API_TIMEOUT = 10_000
 
@@ -82,10 +86,13 @@ function pickAsset(release: RawRelease, pattern: RegExp): RawAsset | undefined {
   return (release.assets ?? []).find((asset) => pattern.test(asset.name))
 }
 
-function buildOf(release: RawRelease): DesktopBuild | null {
-  const installer = pickAsset(release, /Setup.*\.exe$/i) ?? pickAsset(release, /\.exe$/i)
+function buildOf(release: RawRelease, kind: PackageKind): DesktopBuild | null {
+  const installer =
+    kind === 'apk'
+      ? pickAsset(release, /\.apk$/i)
+      : (pickAsset(release, /Setup.*\.exe$/i) ?? pickAsset(release, /\.exe$/i))
   if (!installer?.browser_download_url || !release.tag_name) return null
-  const portable = pickAsset(release, /Portable.*\.zip$/i)
+  const portable = kind === 'exe' ? pickAsset(release, /Portable.*\.zip$/i) : undefined
   return {
     tag: release.tag_name,
     name: installer.name,
@@ -100,10 +107,11 @@ function buildOf(release: RawRelease): DesktopBuild | null {
 }
 
 function pickBuild(releases: RawRelease[], channel: DesktopChannel): DesktopBuild | null {
-  const wantPrerelease = channel === 'preview'
+  const wantPrerelease = channel === 'preview' || channel === 'win7Preview'
+  const kind: PackageKind = channel === 'android' ? 'apk' : 'exe'
   for (const release of releases) {
     if (release.draft || release.prerelease !== wantPrerelease) continue
-    const build = buildOf(release)
+    const build = buildOf(release, kind)
     if (build) return build
   }
   return null
@@ -116,11 +124,17 @@ function readCache(): DesktopBuilds | null {
     const parsed = JSON.parse(raw) as { at?: number; builds?: DesktopBuilds }
     if (typeof parsed.at !== 'number' || Date.now() - parsed.at > CACHE_TTL) return null
     const builds = parsed.builds
-    if (!builds || (!builds.stable && !builds.preview && !builds.win7)) return null
+    if (
+      !builds ||
+      (!builds.stable && !builds.preview && !builds.win7 && !builds.win7Preview && !builds.android)
+    )
+      return null
     return {
       stable: builds.stable ?? null,
       preview: builds.preview ?? null,
       win7: builds.win7 ?? null,
+      win7Preview: builds.win7Preview ?? null,
+      android: builds.android ?? null,
     }
   } catch {
     return null
@@ -138,17 +152,20 @@ function writeCache(builds: DesktopBuilds): void {
 export async function resolveDesktopBuilds(): Promise<DesktopBuilds> {
   const cached = readCache()
   if (cached) return cached
-  /* 两个仓库并行取；任一失败不影响另一个 */
-  const [desktop, win7] = await Promise.all([
+  /* 三个仓库并行取；任一失败不影响其余 */
+  const [desktop, win7, android] = await Promise.all([
     fetchReleases(DESKTOP_REPO),
     fetchReleases(WIN7_REPO),
+    fetchReleases(ANDROID_REPO),
   ])
   const builds: DesktopBuilds = {
     stable: desktop ? pickBuild(desktop, 'stable') : null,
     preview: desktop ? pickBuild(desktop, 'preview') : null,
     win7: win7 ? pickBuild(win7, 'win7') : null,
+    win7Preview: win7 ? pickBuild(win7, 'win7Preview') : null,
+    android: android ? pickBuild(android, 'android') : null,
   }
-  if (desktop || win7) writeCache(builds)
+  if (desktop || win7 || android) writeCache(builds)
   return builds
 }
 
