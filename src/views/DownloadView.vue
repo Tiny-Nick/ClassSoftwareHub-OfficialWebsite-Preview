@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { copy } from '../content/copy'
+import { publicUrl } from '../utils/assets'
 import {
   downloadInstaller,
   resolveDesktopBuilds,
@@ -28,14 +29,6 @@ const loading = ref(true)
 const busy = ref<Record<string, boolean>>({})
 const hint = ref<Record<string, string>>({})
 const hintTimers: Record<string, number> = {}
-
-const stable = computed(() => builds.value.stable)
-const preview = computed(() => builds.value.preview)
-const win7 = computed(() => builds.value.win7)
-const win7Portable = computed(() => builds.value.win7?.portable ?? null)
-const win7Preview = computed(() => builds.value.win7Preview)
-const win7PreviewPortable = computed(() => builds.value.win7Preview?.portable ?? null)
-const android = computed(() => builds.value.android)
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -78,6 +71,141 @@ function downloadPortable(key: string, build: DesktopBuild | null): void {
   void startDownload(key, build.portable)
 }
 
+/* 下载项统一描述，模板按同一结构渲染，避免各版本块排版分叉 */
+interface VersionItem {
+  key: DesktopChannel
+  name: string
+  build: DesktopBuild | null
+  action: string
+  solid: boolean
+  fallback: string
+  emptyNote: string
+  flag?: string
+  portableKey?: string
+  hintKeys: string[]
+}
+
+interface PlatformCard {
+  id: string
+  icon: string
+  title: string
+  requirement: string
+  desc: string
+  foot: string
+  noteTitle?: string
+  noteText?: string
+  items: VersionItem[]
+}
+
+const platforms = computed<PlatformCard[]>(() => {
+  const d = copy.download
+  const b = builds.value
+  return [
+    {
+      id: 'win11',
+      icon: '/brand/platform-win11.svg',
+      title: d.win11Title,
+      requirement: d.win11Requirement,
+      desc: d.win11Desc,
+      foot: d.win11Foot,
+      items: [
+        {
+          key: 'stable',
+          name: d.stableName,
+          build: b.stable,
+          action: d.stableAction,
+          solid: true,
+          fallback: DESKTOP_RELEASES,
+          emptyNote: d.stableNote,
+          hintKeys: ['stable'],
+        },
+        {
+          key: 'preview',
+          name: d.previewName,
+          build: b.preview,
+          action: d.previewAction,
+          solid: false,
+          fallback: DESKTOP_RELEASES,
+          emptyNote: d.previewNote,
+          flag: d.previewNote,
+          hintKeys: ['preview'],
+        },
+      ],
+    },
+    {
+      id: 'win7',
+      icon: '/brand/platform-win7.png',
+      title: d.win7Title,
+      requirement: d.win7Requirement,
+      desc: d.win7Desc,
+      foot: d.win7Foot,
+      items: [
+        {
+          key: 'win7',
+          name: d.win7Name,
+          build: b.win7,
+          action: d.win7Action,
+          solid: true,
+          fallback: WIN7_RELEASES,
+          emptyNote: d.win7Note,
+          portableKey: 'win7Portable',
+          hintKeys: ['win7', 'win7Portable'],
+        },
+        {
+          key: 'win7Preview',
+          name: d.win7PreviewName,
+          build: b.win7Preview,
+          action: d.win7PreviewAction,
+          solid: false,
+          fallback: WIN7_RELEASES,
+          emptyNote: d.previewNote,
+          flag: d.previewNote,
+          portableKey: 'win7PreviewPortable',
+          hintKeys: ['win7Preview', 'win7PreviewPortable'],
+        },
+      ],
+    },
+    {
+      id: 'android',
+      icon: '/brand/platform-android.png',
+      title: d.androidTitle,
+      requirement: d.androidRequirement,
+      desc: d.androidDesc,
+      foot: d.androidFoot,
+      noteTitle: d.androidNoteTitle,
+      noteText: d.androidNoteText,
+      items: [
+        {
+          key: 'android',
+          name: d.androidPkgName,
+          build: b.android,
+          action: d.androidAction,
+          solid: true,
+          fallback: ANDROID_RELEASES,
+          emptyNote: d.androidNote,
+          hintKeys: ['android'],
+        },
+      ],
+    },
+  ]
+})
+
+function metaText(item: VersionItem): string {
+  if (item.build) return metaOf(item.build)
+  return loading.value ? copy.download.loadingNote : item.emptyNote
+}
+
+function hintText(item: VersionItem): string {
+  for (const key of item.hintKeys) {
+    if (hint.value[key]) return hint.value[key]
+  }
+  return ''
+}
+
+function portableOf(item: VersionItem) {
+  return item.portableKey ? (item.build?.portable ?? null) : null
+}
+
 onMounted(async () => {
   builds.value = await resolveDesktopBuilds()
   loading.value = false
@@ -86,13 +214,6 @@ onMounted(async () => {
 onUnmounted(() => {
   Object.values(hintTimers).forEach((timer) => window.clearTimeout(timer))
 })
-
-/* WinUI Iconography 字形 */
-const glyphs = {
-  desktop: '\uE896',
-  web: '\uE774',
-  code: '\uE943',
-}
 </script>
 
 <template>
@@ -102,310 +223,110 @@ const glyphs = {
       <p class="page-lede">{{ copy.download.lede }}</p>
     </header>
 
-    <div class="dl-grid" v-reveal>
-      <!-- 桌面版（主卡） -->
-      <article class="dl-card wide">
-        <div class="dl-head">
-          <span class="wicon dl-ico" aria-hidden="true">{{ glyphs.desktop }}</span>
-          <h2 class="dl-name">{{ copy.download.desktopTitle }}</h2>
-        </div>
-        <p class="dl-desc">{{ copy.download.desktopDesc }}</p>
-
-        <div class="dl-rows">
-          <div class="dl-item">
-            <div class="dl-row">
-              <div class="dl-row-info">
-                <b class="dl-row-name">
-                  {{ copy.download.stableName }}<template v-if="stable"> {{ stable.tag }}</template>
-                </b>
-                <span class="dl-row-note">
-                  {{
-                    stable
-                      ? metaOf(stable)
-                      : loading
-                        ? copy.download.loadingNote
-                        : copy.download.stableNote
-                  }}
-                </span>
-              </div>
-              <div class="dl-row-act">
-                <button
-                  v-if="stable"
-                  type="button"
-                  class="btn-solid"
-                  :disabled="busy.stable"
-                  @click="downloadBuild('stable', stable)"
-                >
-                  {{ busy.stable ? copy.download.downloadBusy : copy.download.stableAction
-                  }}<span v-if="!busy.stable" class="arr" aria-hidden="true">↓</span>
-                </button>
-                <a v-else class="btn-solid" :href="DESKTOP_RELEASES" rel="noopener">
-                  {{ copy.download.stableAction }}<span class="arr" aria-hidden="true">↗</span>
-                </a>
-                <a class="dl-sublink" :href="stable?.releaseUrl ?? DESKTOP_RELEASES" rel="noopener">
-                  {{ copy.download.releaseLink }}<span aria-hidden="true">↗</span>
-                </a>
-              </div>
-            </div>
-            <p v-if="hint.stable" class="dl-hint" role="status">{{ hint.stable }}</p>
+    <!-- 按平台分区：三张等宽卡，卡内版本块结构完全一致 -->
+    <div class="platforms" v-reveal>
+      <article v-for="card in platforms" :key="card.id" class="platform">
+        <header class="pf-head">
+          <img class="pf-ico" :src="publicUrl(card.icon)" alt="" width="48" height="48" />
+          <div class="pf-id">
+            <h2 class="pf-name">{{ card.title }}</h2>
+            <p class="pf-req">{{ card.requirement }}</p>
           </div>
+        </header>
+        <p class="pf-desc">{{ card.desc }}</p>
 
-          <div class="dl-item">
-            <div class="dl-row">
-              <div class="dl-row-info">
-                <b class="dl-row-name">
-                  {{ copy.download.win7Name }}<template v-if="win7"> {{ win7.tag }}</template>
-                </b>
-                <span class="dl-row-note">
-                  {{ win7 ? metaOf(win7) : loading ? copy.download.loadingNote : copy.download.win7Note }}
-                </span>
-                <span v-if="win7" class="dl-row-sub">{{ copy.download.win7Note }}</span>
+        <div class="pf-vers">
+          <div v-for="item in card.items" :key="item.key" class="ver">
+            <div class="ver-top">
+              <div class="ver-title">
+                <b class="ver-name">{{ item.name }}</b>
+                <span v-if="item.build" class="ver-tag">{{ item.build.tag }}</span>
               </div>
-              <div class="dl-row-act">
+              <div class="ver-act">
                 <button
-                  v-if="win7"
+                  v-if="item.build"
                   type="button"
-                  class="btn-solid"
-                  :disabled="busy.win7"
-                  @click="downloadBuild('win7', win7)"
+                  :class="item.solid ? 'btn-solid' : 'btn-ghost'"
+                  :disabled="busy[item.key]"
+                  @click="downloadBuild(item.key, item.build)"
                 >
-                  {{ busy.win7 ? copy.download.downloadBusy : copy.download.win7Action
-                  }}<span v-if="!busy.win7" class="arr" aria-hidden="true">↓</span>
-                </button>
-                <a v-else class="btn-solid" :href="WIN7_RELEASES" rel="noopener">
-                  {{ copy.download.win7Action }}<span class="arr" aria-hidden="true">↗</span>
-                </a>
-                <button
-                  v-if="win7Portable"
-                  type="button"
-                  class="dl-sublink"
-                  :disabled="busy.win7Portable"
-                  @click="downloadPortable('win7Portable', win7)"
-                >
-                  {{ busy.win7Portable ? copy.download.downloadBusy : copy.download.portableAction
-                  }}<span class="dl-sublink-size">{{ fmtSize(win7Portable.size) }}</span>
-                </button>
-                <a class="dl-sublink" :href="win7?.releaseUrl ?? WIN7_RELEASES" rel="noopener">
-                  {{ copy.download.releaseLink }}<span aria-hidden="true">↗</span>
-                </a>
-              </div>
-            </div>
-            <p v-if="hint.win7 || hint.win7Portable" class="dl-hint" role="status">
-              {{ hint.win7 || hint.win7Portable }}
-            </p>
-          </div>
-
-          <div class="dl-item">
-            <div class="dl-row">
-              <div class="dl-row-info">
-                <b class="dl-row-name">
-                  {{ copy.download.win7PreviewName
-                  }}<template v-if="win7Preview"> {{ win7Preview.tag }}</template>
-                </b>
-                <span class="dl-row-note">
-                  {{
-                    win7Preview
-                      ? metaOf(win7Preview) + ' · ' + copy.download.previewNote
-                      : loading
-                        ? copy.download.loadingNote
-                        : copy.download.previewNote
-                  }}
-                </span>
-              </div>
-              <div class="dl-row-act">
-                <button
-                  v-if="win7Preview"
-                  type="button"
-                  class="btn-ghost"
-                  :disabled="busy.win7Preview"
-                  @click="downloadBuild('win7Preview', win7Preview)"
-                >
-                  {{ busy.win7Preview ? copy.download.downloadBusy : copy.download.win7PreviewAction
-                  }}<span v-if="!busy.win7Preview" class="arr" aria-hidden="true">↓</span>
-                </button>
-                <a v-else class="btn-ghost" :href="WIN7_RELEASES" rel="noopener">
-                  {{ copy.download.win7PreviewAction }}<span class="arr" aria-hidden="true">↗</span>
-                </a>
-                <button
-                  v-if="win7PreviewPortable"
-                  type="button"
-                  class="dl-sublink"
-                  :disabled="busy.win7PreviewPortable"
-                  @click="downloadPortable('win7PreviewPortable', win7Preview)"
-                >
-                  {{ busy.win7PreviewPortable
-                    ? copy.download.downloadBusy
-                    : copy.download.portableAction
-                  }}<span class="dl-sublink-size">{{ fmtSize(win7PreviewPortable.size) }}</span>
+                  {{ busy[item.key] ? copy.download.downloadBusy : item.action
+                  }}<span v-if="!busy[item.key]" class="arr" aria-hidden="true">↓</span>
                 </button>
                 <a
-                  class="dl-sublink"
-                  :href="win7Preview?.releaseUrl ?? WIN7_RELEASES"
+                  v-else
+                  :class="item.solid ? 'btn-solid' : 'btn-ghost'"
+                  :href="item.fallback"
                   rel="noopener"
                 >
-                  {{ copy.download.releaseLink }}<span aria-hidden="true">↗</span>
+                  {{ item.action }}<span class="arr" aria-hidden="true">↗</span>
                 </a>
               </div>
             </div>
-            <p v-if="hint.win7Preview || hint.win7PreviewPortable" class="dl-hint" role="status">
-              {{ hint.win7Preview || hint.win7PreviewPortable }}
-            </p>
-          </div>
 
-          <div class="dl-item">
-            <div class="dl-row">
-              <div class="dl-row-info">
-                <b class="dl-row-name">
-                  {{ copy.download.previewName }}<template v-if="preview"> {{ preview.tag }}</template>
-                </b>
-                <span class="dl-row-note">
-                  {{
-                    preview
-                      ? metaOf(preview) + ' · ' + copy.download.previewNote
-                      : loading
-                        ? copy.download.loadingNote
-                        : copy.download.previewNote
-                  }}
-                </span>
-              </div>
-              <div class="dl-row-act">
-                <button
-                  v-if="preview"
-                  type="button"
-                  class="btn-ghost"
-                  :disabled="busy.preview"
-                  @click="downloadBuild('preview', preview)"
-                >
-                  {{ busy.preview ? copy.download.downloadBusy : copy.download.previewAction
-                  }}<span v-if="!busy.preview" class="arr" aria-hidden="true">↓</span>
-                </button>
-                <a v-else class="btn-ghost" :href="DESKTOP_RELEASES" rel="noopener">
-                  {{ copy.download.previewAction }}<span class="arr" aria-hidden="true">↗</span>
-                </a>
-                <a class="dl-sublink" :href="preview?.releaseUrl ?? DESKTOP_RELEASES" rel="noopener">
-                  {{ copy.download.releaseLink }}<span aria-hidden="true">↗</span>
-                </a>
-              </div>
-            </div>
-            <p v-if="hint.preview" class="dl-hint" role="status">{{ hint.preview }}</p>
-          </div>
-        </div>
+            <!-- 元信息独占一行，不与按钮争宽度 -->
+            <p class="ver-meta">{{ metaText(item) }}</p>
 
-        <p class="dl-note">{{ copy.download.releasesNote }}</p>
-      </article>
-
-      <!-- 网页版 -->
-      <article class="dl-card">
-        <div class="dl-head">
-          <span class="wicon dl-ico" aria-hidden="true">{{ glyphs.web }}</span>
-          <h2 class="dl-name">{{ copy.download.webTitle }}</h2>
-        </div>
-        <p class="dl-desc">{{ copy.download.webDesc }}</p>
-        <p class="dl-meta">{{ copy.download.webMeta }}</p>
-        <a class="btn-ghost" :href="WEB_URL" rel="noopener">
-          {{ copy.download.webAction }}<span class="arr" aria-hidden="true">↗</span>
-        </a>
-      </article>
-
-      <!-- 安卓版 -->
-      <article class="dl-card">
-        <div class="dl-head">
-          <span class="dl-ico dl-ico-svg" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <rect
-                x="6"
-                y="2"
-                width="12"
-                height="20"
-                rx="2.5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-              <line
-                x1="10.5"
-                y1="4.8"
-                x2="13.5"
-                y2="4.8"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-              />
-              <circle cx="12" cy="18.5" r="1" fill="currentColor" />
-            </svg>
-          </span>
-          <h2 class="dl-name">{{ copy.download.androidTitle }}</h2>
-        </div>
-        <p class="dl-desc">{{ copy.download.androidDesc }}</p>
-
-        <div class="dl-item android-item">
-          <div class="dl-row">
-            <div class="dl-row-info">
-              <b class="dl-row-name">
-                {{ copy.download.androidPkgName
-                }}<template v-if="android"> {{ android.tag }}</template>
-              </b>
-              <span class="dl-row-note">
-                {{
-                  android
-                    ? metaOf(android)
-                    : loading
-                      ? copy.download.loadingNote
-                      : copy.download.androidNote
-                }}
-              </span>
-            </div>
-            <div class="dl-row-act">
+            <div class="ver-links">
+              <span v-if="item.flag" class="ver-flag">{{ item.flag }}</span>
               <button
-                v-if="android"
+                v-if="portableOf(item)"
                 type="button"
-                class="btn-solid"
-                :disabled="busy.android"
-                @click="downloadBuild('android', android)"
+                class="vlink"
+                :disabled="busy[item.portableKey!]"
+                @click="downloadPortable(item.portableKey!, item.build)"
               >
-                {{ busy.android ? copy.download.downloadBusy : copy.download.androidAction
-                }}<span v-if="!busy.android" class="arr" aria-hidden="true">↓</span>
+                {{ busy[item.portableKey!] ? copy.download.downloadBusy : copy.download.portableAction
+                }}<span class="vlink-size">{{ fmtSize(portableOf(item)!.size) }}</span>
               </button>
-              <a v-else class="btn-solid" :href="ANDROID_RELEASES" rel="noopener">
-                {{ copy.download.androidAction }}<span class="arr" aria-hidden="true">↗</span>
+              <a class="vlink" :href="item.build?.releaseUrl ?? item.fallback" rel="noopener">
+                {{ copy.download.releaseLink }}<span aria-hidden="true">↗</span>
               </a>
             </div>
+
+            <p v-if="hintText(item)" class="ver-hint" role="status">{{ hintText(item) }}</p>
           </div>
-          <p v-if="hint.android" class="dl-hint" role="status">{{ hint.android }}</p>
+
+          <!-- 内容较少的平台补一块说明，使三张卡视觉密度一致 -->
+          <div v-if="card.noteTitle" class="ver ver-note">
+            <b class="ver-name">{{ card.noteTitle }}</b>
+            <p class="note-text">{{ card.noteText }}</p>
+          </div>
         </div>
 
-        <div class="android-foot">
-          <a class="dl-sublink" :href="android?.releaseUrl ?? ANDROID_RELEASES" rel="noopener">
-            {{ copy.download.releaseLink }}<span aria-hidden="true">↗</span>
-          </a>
-          <p class="dl-note">{{ copy.download.androidInstallNote }}</p>
-        </div>
-      </article>
-
-      <!-- 源码 -->
-      <article class="dl-card">
-        <div class="dl-head">
-          <span class="wicon dl-ico" aria-hidden="true">{{ glyphs.code }}</span>
-          <h2 class="dl-name">{{ copy.download.srcTitle }}</h2>
-        </div>
-        <p class="dl-desc">{{ copy.download.srcDesc }}</p>
-        <a class="btn-ghost" :href="REPO_URL" rel="noopener">
-          {{ copy.download.srcAction }}<span class="arr" aria-hidden="true">↗</span>
-        </a>
+        <p class="pf-foot">{{ card.foot }}</p>
       </article>
     </div>
 
-    <p class="page-foot-link">
-      <RouterLink :to="{ name: 'changelog' }" class="plink">
-        {{ copy.download.changelogLink }}<span class="arr" aria-hidden="true">→</span>
-      </RouterLink>
-    </p>
+    <!-- 非安装包入口：收成一行，不再与平台卡并列 -->
+    <div class="others" v-reveal>
+      <h2 class="others-title">{{ copy.download.otherTitle }}</h2>
+      <div class="others-links">
+        <a class="other" :href="WEB_URL" rel="noopener">
+          <span class="other-name">{{ copy.download.webTitle }}</span>
+          <span class="other-meta">{{ copy.download.webMeta }}</span>
+          <span class="other-arr" aria-hidden="true">↗</span>
+        </a>
+        <a class="other" :href="REPO_URL" rel="noopener">
+          <span class="other-name">{{ copy.download.srcTitle }}</span>
+          <span class="other-meta">GPL-3.0-only</span>
+          <span class="other-arr" aria-hidden="true">↗</span>
+        </a>
+        <RouterLink :to="{ name: 'changelog' }" class="other">
+          <span class="other-name">{{ copy.download.changelogShort }}</span>
+          <span class="other-meta">Changelog</span>
+          <span class="other-arr" aria-hidden="true">→</span>
+        </RouterLink>
+      </div>
+    </div>
+
+    <p class="page-note">{{ copy.download.releasesNote }}</p>
   </section>
 </template>
 
 <style scoped>
 .page {
-  padding: 64px 0 0;
+  padding: 56px 0 0;
 }
 
 .page-title {
@@ -413,136 +334,151 @@ const glyphs = {
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .page-lede {
   font-size: var(--fs-lead);
-  line-height: 1.85;
+  line-height: 1.8;
   color: var(--ink-2);
-  max-width: 56ch;
+  max-width: 62ch;
 }
 
-.dl-grid {
+/* ---- 三张平台卡：等宽、等高、卡内结构一致 ---- */
+
+.platforms {
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
-  margin-top: 40px;
+  margin-top: 36px;
 }
 
-.dl-card {
+.platform {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 26px 28px;
+  padding: 22px 20px 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius-l);
   background: var(--surface);
 }
 
-.dl-card.wide {
-  grid-row: span 3;
-}
-
-.dl-head {
+.pf-head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  min-height: 48px;
 }
 
-.dl-ico {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-s);
-  background: var(--glow);
-  color: var(--accent-text);
-  font-size: 18px;
+.pf-ico {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  object-fit: contain;
 }
 
-.dl-ico-svg svg {
-  width: 20px;
-  height: 20px;
+.pf-id {
+  min-width: 0;
 }
 
-.dl-name {
+.pf-name {
   font-size: var(--fs-h3);
   font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
 }
 
-.dl-desc {
-  font-size: 13.5px;
+.pf-req {
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.pf-desc {
+  font-size: 13px;
   line-height: 1.8;
   color: var(--ink-2);
+  margin-top: 18px;
+  min-height: 70px;
 }
 
-.dl-meta {
-  font-size: 12.5px;
-  color: var(--ink-3);
-  font-variant-numeric: tabular-nums;
-  margin-bottom: 2px;
-}
-
-.dl-rows {
-  width: 100%;
+.pf-vers {
   display: grid;
   gap: 10px;
-  margin-top: 8px;
+  align-content: start;
+  flex: 1 1 auto;
 }
 
-.dl-item {
-  display: grid;
-  gap: 6px;
-}
+/* ---- 版本块：标题+按钮 / 元信息 / 次要链接，三行固定 ---- */
 
-.dl-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: nowrap;
-  padding: 14px 18px;
+.ver {
+  padding: 14px 14px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-m);
   background: var(--surface-2);
 }
 
-.dl-row-info {
+.ver-top {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1 1 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ver-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
   min-width: 0;
 }
 
-.dl-row-name {
-  font-size: 14.5px;
+.ver-name {
+  font-size: 14px;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.dl-row-note {
-  font-size: 12px;
+.ver-tag {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  padding: 1px 6px;
+  overflow-wrap: anywhere;
+}
+
+.ver-act {
+  flex: 0 0 auto;
+}
+
+.ver-meta {
+  margin-top: 7px;
+  font-size: 11.5px;
+  line-height: 1.6;
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
 
-.dl-row-sub {
+.ver-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  min-height: 20px;
+}
+
+.ver-flag {
   font-size: 11.5px;
   color: var(--ink-3);
 }
 
-.dl-row-act {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 0 0 auto;
-}
-
-.dl-sublink {
+.vlink {
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
@@ -550,7 +486,7 @@ const glyphs = {
   border: 0;
   background: none;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -558,71 +494,166 @@ const glyphs = {
   transition: color var(--dur) linear;
 }
 
-.dl-sublink:hover {
+.vlink:hover {
   color: var(--accent-text);
 }
 
-.dl-sublink:disabled {
+.vlink:disabled {
   opacity: 0.6;
   cursor: progress;
 }
 
-.dl-sublink-size {
+.vlink-size {
+  font-size: 11px;
   color: var(--ink-3);
-  font-size: 11.5px;
 }
 
-.dl-hint {
-  padding: 0 4px;
-  font-size: 12px;
+.ver-hint {
+  margin-top: 8px;
+  font-size: 11.5px;
+  line-height: 1.6;
   color: var(--accent-text);
 }
 
-.dl-note {
-  font-size: 12px;
-  color: var(--ink-3);
-  margin-top: 4px;
-}
-
-/* ---- 安卓版卡：窄栏内保持一行，补充说明另起一行 ---- */
-
-.android-item {
-  width: 100%;
-  margin-top: 2px;
-}
-
-.android-item .dl-row {
-  padding: 12px 14px;
-}
-
-.android-foot {
+.ver-note {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  justify-content: center;
   gap: 8px;
+  min-height: 96px;
 }
 
-.android-foot .dl-note {
-  margin-top: 0;
+.note-text {
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--ink-2);
 }
 
-/* ---- 按钮（与首页同款） ---- */
+.pf-foot {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
 
-.btn-solid {
+/* ---- 底部次要入口 ---- */
+
+.others {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 20px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.others-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.others-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  flex: 1 1 auto;
+}
+
+.other {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  transition:
+    border-color var(--dur) linear,
+    background-color var(--dur) linear;
+}
+
+.other:hover {
+  border-color: var(--accent-text);
+  background: var(--surface-2);
+}
+
+.other-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.other-meta {
+  font-size: 11px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.other-arr {
+  margin-left: auto;
+  color: var(--ink-3);
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.page-note {
+  margin-top: 16px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+
+/* ---- 按钮（与首页同款，窄卡内略收） ---- */
+
+.btn-solid,
+.btn-ghost {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  background: var(--accent);
-  color: var(--accent-ink);
+  gap: 7px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 10px 22px;
-  border: 0;
+  padding: 9px 15px;
   border-radius: 999px;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color var(--dur) linear;
+  transition:
+    background-color var(--dur) linear,
+    border-color var(--dur) linear;
+}
+
+.btn-solid {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+}
+
+.btn-solid:hover {
+  background: var(--accent-strong);
+}
+
+.btn-ghost {
+  background: none;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent-text);
+  background: var(--surface-2);
 }
 
 .btn-solid:disabled,
@@ -631,88 +662,59 @@ const glyphs = {
   cursor: progress;
 }
 
-.btn-solid:hover {
-  background: var(--accent-strong);
-}
-
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: none;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  color: var(--ink);
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    border-color var(--dur) linear,
-    background-color var(--dur) linear;
-}
-
-.btn-ghost:hover {
-  border-color: var(--accent-text);
-  background: var(--surface-2);
-}
-
 .btn-solid .arr,
-.btn-ghost .arr,
-.plink .arr {
+.btn-ghost .arr {
   transition: transform var(--dur) linear;
 }
 
 .btn-solid:hover .arr,
-.btn-ghost:hover .arr,
-.plink:hover .arr {
-  transform: translateX(3px);
+.btn-ghost:hover .arr {
+  transform: translateX(2px);
 }
 
-.page-foot-link {
-  margin-top: 32px;
-}
+/* ---- 窄屏 ---- */
 
-.plink {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--accent-text);
-  transition: color var(--dur) linear;
-}
-
-.plink:hover {
-  color: var(--accent-strong);
-}
-
-@media (max-width: 860px) {
-  .page {
-    padding-top: 44px;
-  }
-
-  .dl-grid {
+@media (max-width: 1000px) {
+  .platforms {
     grid-template-columns: 1fr;
   }
 
-  .dl-card.wide {
-    grid-row: auto;
+  .pf-desc {
+    min-height: 0;
   }
 
-  .dl-row {
+  .others {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding-top: 40px;
+  }
+
+  .platforms {
+    margin-top: 28px;
+  }
+
+  .others-links {
+    grid-template-columns: 1fr;
+  }
+
+  .ver-top {
     flex-wrap: wrap;
-    align-items: flex-start;
   }
 
-  .dl-row-info {
-    flex-basis: 100%;
+  .ver-act {
+    width: 100%;
   }
 
-  .dl-row-act {
-    flex-wrap: wrap;
+  .ver-act .btn-solid,
+  .ver-act .btn-ghost {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
