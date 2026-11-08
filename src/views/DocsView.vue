@@ -12,8 +12,9 @@ const DOCS_REPO_FILE = 'https://github.com/c1201y/classsoftwarehub-docs/blob/mai
    故走 gh-proxy 转发的同一份 raw 内容；取不到时用构建期内联快照。 */
 const DOCS_LIVE_BASE =
   'https://gh-proxy.com/https://raw.githubusercontent.com/c1201y/classsoftwarehub-docs/main/docs'
-const DOC_CACHE_KEY = 'csh-site-doc'
-const DOC_CACHE_TTL = 10 * 60 * 1000
+const DOC_CACHE_KEY = 'csh-site-doc-v2'
+/* 缓存只用于短时间内来回切换页面；文档更新后不应被旧副本挡住 */
+const DOC_CACHE_TTL = 60 * 1000
 
 /* URL 短名 → 仓库内 md 路径（与 sync-docs 脚本同步的文件对应） */
 const DOC_PATHS: Record<string, string> = {
@@ -90,7 +91,12 @@ async function fetchDoc(path: string): Promise<string> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 8000)
   try {
-    const res = await fetch(`${DOCS_LIVE_BASE}/${path}.md`, { signal: controller.signal })
+    /* 按小时更换请求地址并禁用 HTTP 缓存，绕开浏览器与代理留存的旧副本 */
+    const hour = new Date().toISOString().slice(0, 13).replace(/\D/g, '')
+    const res = await fetch(`${DOCS_LIVE_BASE}/${path}.md?v=${hour}`, {
+      signal: controller.signal,
+      cache: 'no-store',
+    })
     if (!res.ok) return ''
     const raw = await res.text()
     writeDocCache(path, raw)
@@ -157,17 +163,22 @@ const githubUrl = computed(() => {
   return path ? `${DOCS_REPO_FILE}/${path}.md` : DOCS_REPO_FILE
 })
 
-/* 文档元信息：从 frontmatter 取更新日期 */
+/* 文档元信息：正文与日期保持同源，实时优先，取不到才用构建期快照 */
 const rawDoc = computed(() => {
   const path = DOC_PATHS[currentKey.value]
   return path ? liveRaw.value || docs[path] || '' : ''
 })
 
-const docDate = computed(() => {
-  const m = rawDoc.value.match(/createTime:\s*(\d{4})\/(\d{1,2})\/(\d{1,2})/)
+/* 优先读 updateTime；文档仓库目前把 createTime 当更新日维护，两者都要兼容 */
+function parseDocDate(src: string): string {
+  const m =
+    src.match(/^\s*updateTime:\s*(\d{4})\/(\d{1,2})\/(\d{1,2})/m) ??
+    src.match(/^\s*createTime:\s*(\d{4})\/(\d{1,2})\/(\d{1,2})/m)
   if (!m) return ''
   return `${m[1]}/${m[2].padStart(2, '0')}/${m[3].padStart(2, '0')}`
-})
+}
+
+const docDate = computed(() => parseDocDate(rawDoc.value))
 
 /* 右侧「本页内容」：渲染后从正文标题提取锚点 */
 interface TocItem {
